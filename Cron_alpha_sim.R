@@ -1,5 +1,5 @@
 #Ben Dykstra
-#replicating excel file with random values to compute alpha and run kernel estimation on
+#replicating excel file with random values to compute alpha and use Pearson's estimation fit
 
 
 RandDF = function(RandomNumbers){
@@ -13,7 +13,6 @@ RandDF = function(RandomNumbers){
 x = RandDF(rand)
 x
 
-
 #function for calculating Cronbach's Alpha - takes in a data frame as a parameter
 CronAlpha = function(dataframe){
   k = nrow(dataframe) #number of iterations
@@ -25,27 +24,24 @@ CronAlpha = function(dataframe){
   return(alpha)
 }
 
-#for loop for test points
+
 nrep = 1000
-x = c(1:1000)
+x = c(1:1000) #some place holding variables to fill with alpha values
+z = c(1:1000)
+#for loop for test points
 for( i in 1:nrep){
   rand = rnorm(90)
   moments = empMoments(rand) #gives the first four moments
   y = pearsonFitM(moments = mom) #finds pearson distribution with those moments/parameters
-  test_points = rpearson(90, params = y) 
-  df = RandDF(test_points)
-  myAlpha = CronAlpha(df)
+  test_points = rpearson(90, params = y) #generates fitted test points
+  est_df = RandDF(test_points)
+  myAlpha = CronAlpha(est_df)
   x[i] = myAlpha
-}
-
-#regular loop with no estimation in it for comparison
-nrep = 1000
-z = c(1:1000)
-for( i in 1:nrep){
-  rand = rnorm(90)
-  df = RandDF(rand)
-  myAlpha = CronAlpha(df)
-  z[i] = myAlpha
+  
+  #uses regular non-fitted points to generate alphas to compare to the fitted ones
+  not_est_df = RandDF(rand)
+  not_est_Alpha = CronAlpha(not_est_df)
+  z[i] = not_est_Alpha
 }
 
 
