@@ -32,7 +32,7 @@ z = c(1:1000)
 for( i in 1:nrep){
   rand = rnorm(90)
   moments = empMoments(rand) #gives the first four moments
-  y = pearsonFitM(moments = mom) #finds pearson distribution with those moments/parameters
+  y = pearsonFitM(moments = moments) #finds pearson distribution with those moments/parameters
   test_points = rpearson(90, params = y) #generates fitted test points
   est_df = RandDF(test_points)
   myAlpha = CronAlpha(est_df)
