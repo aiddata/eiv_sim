@@ -7,10 +7,12 @@ RandDF = function(RandomNumbers){
   colnames = c("cell1", "cell2", "cell3", "cell4", "cell5", "cell6", "cell7", "cell8", "cell9")
   myDF = data.frame(matrix(RandomNumbers, 10, 9), row.names = rownames)
   names(myDF) = colnames
+  
   return(myDF)
 }
 x = RandDF(rand)
 x
+
 
 #function for calculating Cronbach's Alpha - takes in a data frame as a parameter
 CronAlpha = function(dataframe){
@@ -23,19 +25,32 @@ CronAlpha = function(dataframe){
   return(alpha)
 }
 
-
-nrep = 100
-x = c(1:100)
+#for loop for test points
+nrep = 1000
+x = c(1:1000)
 for( i in 1:nrep){
-  rand = runif(90, min = 0, max = 1)
-  df = RandDF(rand)
+  rand = rnorm(90)
+  moments = empMoments(rand) #gives the first four moments
+  y = pearsonFitM(moments = mom) #finds pearson distribution with those moments/parameters
+  test_points = rpearson(90, params = y) 
+  df = RandDF(test_points)
   myAlpha = CronAlpha(df)
   x[i] = myAlpha
 }
 
-plot(x)
+#regular loop with no estimation in it for comparison
+nrep = 1000
+z = c(1:1000)
+for( i in 1:nrep){
+  rand = rnorm(90)
+  df = RandDF(rand)
+  myAlpha = CronAlpha(df)
+  z[i] = myAlpha
+}
 
 
-  
-  
+hist(x)
+hist(z)
+mean_diff = mean(x-z)
+print(mean_diff)
   
