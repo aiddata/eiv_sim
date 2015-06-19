@@ -1,17 +1,16 @@
 #Ben Dykstra
 #replicating excel file with random values to compute alpha and use Pearson's estimation fit
-
+library(PearsonDS)
+library(MASS)
 
 RandDF = function(RandomNumbers){
-  rownames = c("iter1", "iter2", "iter3", "iter4", "iter5", "iter6", "iter7", "iter8", "iter9", "iter10")
-  colnames = c("cell1", "cell2", "cell3", "cell4", "cell5", "cell6", "cell7", "cell8", "cell9")
-  myDF = data.frame(matrix(RandomNumbers, 10, 9), row.names = rownames)
+  #rownames = c("iter1", "iter2", "iter3", "iter4", "iter5", "iter6", "iter7", "iter8", "iter9", "iter10")
+  colnames = c("cell1", "cell2", "cell3", "cell4", "cell5")
+  myDF = data.frame(matrix(RandomNumbers, 1000, 5)) #CHANGE ROWS TO MATCH TOTAL ON LINE 29
   names(myDF) = colnames
   
   return(myDF)
 }
-x = RandDF(rand)
-x
 
 #function for calculating Cronbach's Alpha - takes in a data frame as a parameter
 CronAlpha = function(dataframe){
@@ -20,33 +19,58 @@ CronAlpha = function(dataframe){
   ColMeans = apply(dataframe, 2, FUN = mean) #mean across all iterations for each cell
   Num = sum(RowVar)
   Den = k^2 * var(ColMeans)
+  print(Num)
+  print(Den)
   alpha = (k/(k-1))*(1 -(Num/Den))
   return(alpha)
 }
 
 
-nrep = 1000
-x = c(1:1000) #some place holding variables to fill with alpha values
-z = c(1:1000)
+static_rand = rnorm(5000, mean = 0, sd = 1) #CHANGE TOTAL NUMBER OF KNOWN POINTS - MATCH WITH LINE 9
+static_df = RandDF(static_rand)
+
+static_est_df = data.frame(matrix( ,100000, 5)) #CHANGE NUMBER OF ROWS - MATCH ROW # W/ LINE 40
+names(static_est_df) = c("cell1", "cell2", "cell3", "cell4", "cell5")
+
+
 #for loop for test points
-for( i in 1:nrep){
-  rand = rnorm(90)
-  moments = empMoments(rand) #gives the first four moments
-  y = pearsonFitM(moments = moments) #finds pearson distribution with those moments/parameters
-  test_points = rpearson(90, params = y) #generates fitted test points
-  est_df = RandDF(test_points)
-  myAlpha = CronAlpha(est_df)
-  x[i] = myAlpha
-  
-  #uses regular non-fitted points to generate alphas to compare to the fitted ones
-  not_est_df = RandDF(rand)
-  not_est_Alpha = CronAlpha(not_est_df)
-  z[i] = not_est_Alpha
+for( i in 1:ncol(static_df)){
+  momen = empMoments(static_df[,i]) #calculates moments for each column -- mean, var, skew, kurtosis
+  #y = pearsonFitM(moments = momen) #finds pearson distribution with those moments/parameters for column
+  test_points = rpearson(100000, moments = momen) #generates fitted test points 
+  static_est_df[ , i] = test_points
 }
 
+#alpha calculations
+alpha = CronAlpha(static_df)
+est_alpha = CronAlpha(static_est_df)
 
-hist(x)
-hist(z)
-mean_diff = mean(x-z)
-print(mean_diff)
-  
+
+#estimated plots
+est_dat = data.frame(cols = c(static_est_df[1:nrow(static_est_df),1], 
+                              static_est_df[1:nrow(static_est_df),2], 
+                              static_est_df[1:nrow(static_est_df),3], 
+                              static_est_df[1:nrow(static_est_df),4],
+                              static_est_df[1:nrow(static_est_df),5]), 
+                 lines = rep(c("1", "2","3", "4", "5"), each = nrow(static_est_df)))
+ggplot(est_dat, aes(x = cols, fill = lines)) + geom_density() + ggtitle("Estimated Data")
+
+#known plots
+dat = data.frame(cols = c(static_df[1:nrow(static_df),1], static_df[1:nrow(static_df),2], 
+                              static_df[1:nrow(static_df),3], static_df[1:nrow(static_df),4],
+                              static_df[1:nrow(static_df),5]), 
+                     lines = rep(c("1", "2","3", "4", "5"), each = nrow(static_df)))
+ggplot(dat, aes(x = cols, fill = lines)) + geom_density() + ggtitle("Known Data")
+
+#combined plots
+comb_dat = data.frame(cols = c(static_est_df[ 1:1000,5], 
+                               static_df[ 1:1000,5]),  
+                     lines = rep(c("est5", "5"), each = 1000))
+ggplot(comb_dat, aes(x = cols, fill = lines)) + geom_density() + ggtitle("est vs. known")
+
+
+print(alpha)
+print(est_alpha)
+perc_diff = (alpha - est_alpha)/alpha
+print(perc_diff)
+
